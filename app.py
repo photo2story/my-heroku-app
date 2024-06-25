@@ -261,3 +261,6 @@ if __name__ == '__main__':
     app.run(debug=True)
 # # # .\.venv\Scripts\activate
 # #  python app.py 
+# git add runtime.txt
+# git commit -m "Update Python runtime to a supported version"
+# git push heroku main
