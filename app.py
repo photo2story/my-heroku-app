@@ -260,4 +260,4 @@ discord_thread.start()
 if __name__ == '__main__':
     app.run(debug=True)
 # # # .\.venv\Scripts\activate
-# python app.py 
+# #  python app.py 
