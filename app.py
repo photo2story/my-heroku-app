@@ -1,4 +1,5 @@
 # app.py
+# app.py
 from flask import Flask, send_from_directory, render_template, request, jsonify
 from flask_cors import CORS
 import os
@@ -15,11 +16,9 @@ import nest_asyncio
 
 logging.basicConfig(level=logging.INFO)
 
-# 콘솔 출력 인코딩을 UTF-8로 설정
 sys.stdout.reconfigure(encoding='utf-8')
-
-# 현재 디렉토리 경로를 시스템 경로에 추가
 sys.path.append(os.path.join(os.path.dirname(__file__), 'my-flask-app'))
+
 from datetime import datetime
 import pandas as pd
 import numpy as np
@@ -30,10 +29,7 @@ from get_compare_stock_data import merge_csv_files, load_sector_info
 from Results_plot_mpl import plot_results_mpl
 from get_ticker import get_ticker_from_korean_name
 
-# SSL 인증서 설정
 os.environ['SSL_CERT_FILE'] = certifi.where()
-
-# 환경 변수 로드
 load_dotenv()
 
 app = Flask(__name__)
@@ -51,8 +47,7 @@ def static_files(filename):
 def save_search_history():
     data = request.json
     stock_name = data.get('stock_name')
-    # 여기에 검색 기록을 저장하는 로직을 작성합니다.
-    print(f'Saved {stock_name} to search history.')  # 실제로는 데이터베이스에 저장 등
+    print(f'Saved {stock_name} to search history.')
     return jsonify({"success": True})
 
 @app.route('/api/get_images', methods=['GET'])
@@ -64,19 +59,15 @@ def get_images():
             images.append(filename)
     return jsonify(images)
 
-# 전송된 메시지를 기록하기 위한 딕셔너리
 sent_messages = {}
 
-# 메시지 기록을 일정 시간 후 초기화하는 함수
 def reset_sent_messages():
     global sent_messages
     sent_messages = {}
     threading.Timer(10.0, reset_sent_messages).start()
 
-# 처음 시작할 때 메시지 기록 초기화 타이머 시작
 reset_sent_messages()
 
-# Discord 설정
 TOKEN = os.getenv('DISCORD_APPLICATION_TOKEN')
 CHANNEL_ID = os.getenv('DISCORD_CHANNEL_ID')
 
@@ -84,26 +75,13 @@ intents = discord.Intents.all()
 intents.message_content = True
 bot = commands.Bot(command_prefix='', intents=intents)
 
-# Backtesting 관련 코드
-from datetime import datetime
-from estimate_stock import estimate_stock, estimate_snp
-from Results_plot import plot_comparison_results
-from get_ticker import get_ticker_name, get_ticker_from_korean_name
-
 stocks = ['QQQ', 'NVDA', 'BAC', 'COIN']
 start_date = "2022-01-01"
 end_date = datetime.today().strftime('%Y-%m-%d')
 initial_investment = 30000000
 monthly_investment = 1000000
 
-# 처리된 메시지 ID를 저장하는 세트
 processed_message_ids = set()
-def is_processed(message_id):
-    if message_id in processed_message_ids:
-        return True
-    else:
-        processed_message_ids.add(message_id)
-        return False
 
 async def backtest_and_send(ctx, stock, option_strategy):
     total_account_balance, total_rate, str_strategy, invested_amount, str_last_signal, min_stock_data_date, file_path, result_df = estimate_stock(
@@ -201,20 +179,18 @@ async def show_all(ctx):
 
 @bot.event
 async def on_ready():
-    if not hasattr(bot, 'is_logged_in'):
-        bot.is_logged_in = False
-    if not bot.is_logged_in:
+    if not hasattr(bot, 'is_logged_in') or not bot.is_logged_in:
+        bot.is_logged_in = True
         print(f'Logged in as {bot.user.name}')
         channel = bot.get_channel(int(CHANNEL_ID))
         if channel:
             await channel.send(f'Bot has successfully logged in: {bot.user.name}')
-        bot.is_logged_in = True
 
 @bot.command()
 async def ping(ctx):
-    if is_processed(ctx.message.id):
-        return
-    await ctx.send(f'pong: {bot.user.name}')
+    if ctx.message.id not in processed_message_ids:
+        processed_message_ids.add(ctx.message.id)
+        await ctx.send(f'pong: {bot.user.name}')
 
 def run_discord_bot():
     nest_asyncio.apply()
