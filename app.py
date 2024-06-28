@@ -82,6 +82,7 @@ initial_investment = 30000000
 monthly_investment = 1000000
 
 processed_message_ids = set()
+login_once_flag = False  # 로그인 중복을 방지하기 위한 플래그
 
 async def backtest_and_send(ctx, stock, option_strategy):
     total_account_balance, total_rate, str_strategy, invested_amount, str_last_signal, min_stock_data_date, file_path, result_df = estimate_stock(
@@ -179,8 +180,9 @@ async def show_all(ctx):
 
 @bot.event
 async def on_ready():
-    if not hasattr(bot, 'is_logged_in') or not bot.is_logged_in:
-        bot.is_logged_in = True
+    global login_once_flag
+    if not login_once_flag:
+        login_once_flag = True
         print(f'Logged in as {bot.user.name}')
         channel = bot.get_channel(int(CHANNEL_ID))
         if channel:
@@ -200,6 +202,7 @@ if __name__ == '__main__':
     discord_thread = threading.Thread(target=run_discord_bot)
     discord_thread.start()
     app.run(debug=True)
+
 
 
 # # # .\.venv\Scripts\activate
