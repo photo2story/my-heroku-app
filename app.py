@@ -225,6 +225,7 @@ if __name__ == '__main__':
     discord_thread.start()
     app.run(debug=True)
 
+
 # # # .\.venv\Scripts\activate
 # #  python app.py 
 # git add runtime.txt
