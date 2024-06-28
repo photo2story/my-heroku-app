@@ -31,3 +31,5 @@ certifi
 gunicorn
 celery
 redis
+nest-asyncio
+

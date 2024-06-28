@@ -1,9 +1,6 @@
 # app.py
-from flask import Flask, send_from_directory
-from flask import render_template
-from flask import request, jsonify
+from flask import Flask, send_from_directory, render_template, request, jsonify
 from flask_cors import CORS
-from threading import Thread
 import os
 from dotenv import load_dotenv
 import discord
@@ -14,7 +11,8 @@ import sys
 import certifi
 import threading
 import logging
-# from celery import Celery
+import nest_asyncio
+
 logging.basicConfig(level=logging.INFO)
 
 # 콘솔 출력 인코딩을 UTF-8로 설정
@@ -22,7 +20,6 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 # 현재 디렉토리 경로를 시스템 경로에 추가
 sys.path.append(os.path.join(os.path.dirname(__file__), 'my-flask-app'))
-# Your Discord bot setup and run logic should follow here
 from datetime import datetime
 import pandas as pd
 import numpy as np
@@ -31,7 +28,6 @@ from estimate_stock import estimate_snp, estimate_stock
 from Results_plot import plot_comparison_results, plot_results_all
 from get_compare_stock_data import merge_csv_files, load_sector_info
 from Results_plot_mpl import plot_results_mpl
-import xml.etree.ElementTree as ET
 from get_ticker import get_ticker_from_korean_name
 
 # SSL 인증서 설정
@@ -43,34 +39,9 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# Celery 설정
-# app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-# app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
-# celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-# celery.conf.update(app.config)
-
-# @celery.task
-# def long_running_task():
-#     # 오래 걸리는 작업을 여기에 작성
-#     pass
-
-# @app.route("/start-task")
-# def start_task():
-#     task = long_running_task.apply_async()
-#     return jsonify({"task_id": task.id}), 202
-
-# @app.route("/api/data")
-# def get_data():
-#     sample_data = {"message": "Hello from Flask!"}
-#     return jsonify(sample_data)
-
 @app.route('/')
 def index():
     return render_template('index.html')
-
-# @app.route('/static/<path:filename>')
-# def static_files(filename):
-#     return send_from_directory('static', filename)
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
@@ -111,7 +82,6 @@ CHANNEL_ID = os.getenv('DISCORD_CHANNEL_ID')
 
 intents = discord.Intents.all()
 intents.message_content = True
-# client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='', intents=intents)
 
 # Backtesting 관련 코드
@@ -164,7 +134,6 @@ async def backtest_and_send(ctx, stock, option_strategy):
 
 @bot.command()
 async def buddy(ctx):
-    loop = asyncio.get_running_loop()
     for stock in stocks:
         await backtest_and_send(ctx, stock, 'modified_monthly')
         plot_results_mpl(stock, start_date, end_date)
@@ -241,24 +210,21 @@ async def on_ready():
             await channel.send(f'Bot has successfully logged in: {bot.user.name}')
         bot.is_logged_in = True
 
-
 @bot.command()
 async def ping(ctx):
     if is_processed(ctx.message.id):
         return
     await ctx.send(f'pong: {bot.user.name}')
 
-
-    
 def run_discord_bot():
+    nest_asyncio.apply()
     bot.run(TOKEN)
 
-# Discord Bot을 별도의 스레드에서 실행
-discord_thread = threading.Thread(target=run_discord_bot)
-discord_thread.start()
-
 if __name__ == '__main__':
+    discord_thread = threading.Thread(target=run_discord_bot)
+    discord_thread.start()
     app.run(debug=True)
+
 # # # .\.venv\Scripts\activate
 # #  python app.py 
 # git add runtime.txt
