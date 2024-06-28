@@ -193,16 +193,21 @@ async def ping(ctx):
         processed_message_ids.add(ctx.message.id)
         await ctx.send(f'pong: {bot.user.name}')
 
-def run_discord_bot():
-    nest_asyncio.apply()
-    bot.run(TOKEN)
-
 if __name__ == '__main__':
-    discord_thread = threading.Thread(target=run_discord_bot)
-    discord_thread.start()
-    app.run(debug=True)
+    nest_asyncio.apply()
+    
+    loop = asyncio.get_event_loop()
 
+    async def run():
+        await bot.start(TOKEN)
+    
+    def run_flask():
+        app.run(debug=True, use_reloader=False)
 
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
+    loop.run_until_complete(run())
 
 
 # # # .\.venv\Scripts\activate
